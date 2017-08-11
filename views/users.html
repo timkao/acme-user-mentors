@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="row">
+{% for user in users %}
+<div class='col-lg-{{scale}}'>
+  <p class='lead'>{{user.name}}</p>
+  <h4>Awarded</h4>
+  <ol>
+  {% for award in user.award %}
+  <li>{{award}}</li>
+  {% endfor %}
+  </ol>
+  <form method="POST" action="/users/{{user.id}}/award">
+    <button class="btn btn-success">Give Recognition</button>
+  </form>
+</div>
+{% endfor %}
+</div>
+{% endblock %}
