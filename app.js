@@ -4,12 +4,16 @@ const app = express();
 const nunjucks = require('nunjucks')
 const models = require('./models')
 const router = require('./routes')
+const bodyParser = require('body-parser')
+const methodOverride = require('method-override')
 
 const port = process.env.PORT || 3000
 
 
 app.use('/vendor', express.static(path.join(__dirname, 'node_modules')))
 app.use('/public', express.static(path.join(__dirname, 'public')))
+app.use(bodyParser.urlencoded({extended: false}))
+app.use(methodOverride('_method'))
 app.use('/users', router)
 
 app.set('view engine', 'html')
@@ -25,7 +29,7 @@ models.sync()
 .then(function() {
   return models.seed()
 })
-.then(()=> {
+.then(() => {
     app.listen(port, () => {
     console.log(`listening on port ${port}`)
   })

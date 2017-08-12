@@ -1,3 +1,23 @@
 h2 {
   color: red
 }
+
+.userblocks {
+  display: inline-block;
+  margin-left: 1em;
+  margin-right: 1em;
+  margin-top: 1em;
+  width: 15em;
+  height: auto;
+  vertical-align:top;
+  border: 1px black solid;
+  padding-left: 1em;
+  padding-right: 1em;
+}
+
+.userblocks .lead {
+    border-bottom: 1px black solid;
+    vertical-align:top;
+    text-align: center;
+    top: 1em
+}

@@ -10,30 +10,105 @@ var User = conn.define('user', {
     //allowNull: false
   },
   award: {
-    type: Sequelize.ARRAY(Sequelize.TEXT)
+    type: Sequelize.ARRAY(Sequelize.TEXT),
+    defaultValue: []
   }
 })
 
+var Award = conn.define('award', {
+  name: {
+    type: Sequelize.STRING,
+    //allowNull: false
+  }
+})
+
+
+Award.belongsTo(User);
+User.hasMany(Award);
 User.belongsTo(User, {as: 'Mentor'});
 
 User.generateAward = function(id) {
-  var message = faker.lorem.sentence()
+  var message = faker.company.catchPhrase()
   var newAward = []
+  var currentUser
   return this.findById(id)
   .then(result => {
+    currentUser = result
     result.award.push(message);
     newAward = result.award
-    this.update({award: newAward}, {
+    return this.update({award: newAward}, {
       where: {
         id: id
       }
     })
   })
+  .then(() => {
+    return Award.create({
+      name: message
+    })
+  })
+  .then(nAward => {
+    nAward.setUser(currentUser)
+  })
 }
 
 User.findUsersViewModel = function() {
+  var allUsers;
+  return this.findAll({
+    include: Award
+  })
+  .then(result => {
+    allUsers = result;
+    var mentorsProms = []
+    result.forEach( user => {
+        mentorsProms.push(user.getMentor())
+    })
+    return Promise.all(mentorsProms)
+  })
+  .then( mentorNames => {
+    var uniqueMentor = []
+    for (var i = 0; i < mentorNames.length; i++) {
+
+      if (mentorNames[i]) {
+      if (uniqueMentor.length === 0) {
+        uniqueMentor.push(mentorNames[i])
+      }
+      else {
+        var unique = true;
+        for (var j = 0; j < uniqueMentor.length; j++) {
+          if (mentorNames[i].id === uniqueMentor[j].id) {
+            unique = false
+            break
+          }
+        }
+        if (unique) {
+          uniqueMentor.push(mentorNames[i])
+        }
+      }
+      }
+    }
+    // mentor do not show up when i pass in nunjucks
+    /*
+    allUsers = allUsers.map( user => {
+        user.dataValues.mentor = 'check';
+        for (var i = 0; i < result.length; i++) {
+          if (result[i].id === user.MentorId) {
+            user.dataValues.mentor = result[i].name
+            break
+          }
+        }
+      return user
+    })
+    */
+    return [allUsers, uniqueMentor]
+  })
+
+
+  /*
   var allUsers
-  return this.findAll({})
+  return this.findAll({
+    incude: Award
+  })
   .then(users => {
     allUsers = users
     var mentorsProms = []
@@ -58,6 +133,19 @@ User.findUsersViewModel = function() {
     })
     return allUsers
   })
+  */
+}
+
+User.destroyById = function(id) {
+  return this.destroy({
+    where: {
+      id: id
+    }
+  })
+}
+
+User.removeAward = function(userId, awardId) {
+  console.log('check')
 }
 
 function sync() {
@@ -67,17 +155,17 @@ function sync() {
 function seed() {
   var tim = User.create({
     name: 'Tim Kao',
-    award: ['Best Husband', 'Best Boyfriend', 'Best Life']
+    award: ['TBest Husband', 'TBest Boyfriend', 'TBest Life']
   })
 
   var peggy = User.create({
     name: 'Peggy Ho',
-    award: ['Best Comedian', 'Best looking', 'Top Sales']
+    award: ['PBest looking', 'PTop Sales']
   })
 
   var ken = User.create({
     name: 'Ken Chen',
-    award: ['Best Dancer']
+    award: ['KBest Dancer']
   })
 
   var allen = User.create({
@@ -90,8 +178,34 @@ function seed() {
     award: []
   })
 
+  var taward1 = Award.create({
+    name: 'TBest Husband'
+  })
+
+  var taward2 = Award.create({
+    name: 'TBest Boyfriend'
+  })
+
+  var taward3 = Award.create({
+    name: 'TBest Life'
+  })
+
+  var paward1 = Award.create({
+    name: 'PBest Looking'
+  })
+
+  var paward2 = Award.create({
+    name: 'PTop Sales'
+  })
+
+  var kaward1 = Award.create({
+    name: 'KBest Dancer'
+  })
+
+  var persons
   return Promise.all([tim, peggy, ken, normal, allen])
   .then((result) => {
+    persons = result
     result.forEach(people => {
       console.log(people.name + ' is created')
       if (people.name === 'Ken Chen' || people.name === 'Normal People') {
@@ -101,6 +215,21 @@ function seed() {
         people.setMentor(result[1])
       }
     })
+    return Promise.all([taward1, taward2, taward3, paward1, paward2, kaward1])
+  })
+  .then( awards => {
+    // need a promise call to fix
+      awards.forEach( award => {
+        if (award.name[0] === 'T') {
+          award.setUser(persons[0])
+        }
+        else if (award.name[0] === 'P') {
+          award.setUser(persons[1])
+        }
+        else {
+          award.setUser(persons[2])
+        }
+      })
   })
 
 }
@@ -108,5 +237,6 @@ function seed() {
 module.exports = {
   sync: sync,
   seed: seed,
-  User: User
+  User: User,
+  Award: Award
 }

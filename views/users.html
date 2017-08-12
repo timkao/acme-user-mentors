@@ -2,20 +2,41 @@
 
 {% block content %}
 
-<div class="row">
+<form method="POST" action="/users">
+  <input type="text" placeholder="New User" class="form-control" name="name">
+  <button class="btn btn-primary">Add User</button>
+</form>
+
+
 {% for user in users %}
-<div class='col-lg-{{scale}}'>
-  <p class='lead'>{{user.name}}</p>
+<div class="userblocks">
+
+  <div>
+    <div class="lead">{{user.name}}</div>
+    <form method="POST" action="/users/{{user.id}}?_method=DELETE">
+      <button class="btn btn-danger">Remove User</button>
+    </form>
+  </div>
   <h4>Awarded</h4>
   <ol>
-  {% for award in user.award %}
-  <li>{{award}}</li>
+  {% for award in user.awards %}
+  <li>{{award.name}}</li>
+  <form action="/users/{{award.userId}}/award/{{award.id}}?_method=DELETE" method="POST">
+    <button>Remove Award</button>
+  </form>
   {% endfor %}
   </ol>
   <form method="POST" action="/users/{{user.id}}/award">
     <button class="btn btn-success">Give Recognition</button>
   </form>
+
+  {% for mentor in mentors %}
+  {% if user.MentorId === mentor.id %}
+  <div>Mentor: {{mentor.name}}</div>
+  {% endif %}
+  {% endfor %}
 </div>
 {% endfor %}
-</div>
+
+
 {% endblock %}
