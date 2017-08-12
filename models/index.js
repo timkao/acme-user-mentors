@@ -87,6 +87,12 @@ User.findUsersViewModel = function() {
       }
       }
     }
+    var mentorSelections = [];
+    allUsers.forEach( user => {
+      if (user.awards.length >= 2) {
+        mentorSelections.push(user)
+      }
+    })
     // mentor do not show up when i pass in nunjucks
     /*
     allUsers = allUsers.map( user => {
@@ -100,40 +106,8 @@ User.findUsersViewModel = function() {
       return user
     })
     */
-    return [allUsers, uniqueMentor]
+    return [allUsers, uniqueMentor, mentorSelections]
   })
-
-
-  /*
-  var allUsers
-  return this.findAll({
-    incude: Award
-  })
-  .then(users => {
-    allUsers = users
-    var mentorsProms = []
-    users.forEach( user => {
-      if (user.MentorId !==  null) {
-        mentorsProms.push(user.getMentor())
-      }
-    })
-    return Promise.all(mentorsProms)
-  })
-  .then(result => {
-    allUsers = allUsers.map(user => {
-      if (user.MentorId !== null) {
-        for (var i = 0; i < result.length; i++) {
-          if (result[i].id && result[i].id === user.MentorId) {
-            user.dataValues.mentor = result[i].name
-            break
-          }
-        }
-      }
-      return user
-    })
-    return allUsers
-  })
-  */
 }
 
 User.destroyById = function(id) {
@@ -145,11 +119,51 @@ User.destroyById = function(id) {
 }
 
 User.removeAward = function(userId, awardId) {
-  console.log('check')
+  return Award.destroy({
+    where: {
+      id: awardId
+    }
+  })
+  .then(() => {
+    return this.findAll({
+      where: {
+        id: userId
+      },
+      include: Award
+    })
+  })
+  .then( result => {
+    if (result[0].awards.length < 2) {
+      return this.update({
+        MentorId: null
+      }, {
+        where: {
+          MentorId: result[0].id
+        }
+      })
+    }
+  })
 }
 
+User.updateUserFromRequestBody = function(id, reqBody) {
+  return this.findAll({
+    where: {
+      name: reqBody.select
+    }
+  })
+  .then( result => {
+    //console.log(result);
+    return this.update({MentorId: result[0].id}, {
+      where: {
+        id: id
+      }
+    })
+  })
+}
+
+
 function sync() {
-  return conn.sync({force: true})
+  return conn.sync({force: true, logging: false})
 }
 
 function seed() {

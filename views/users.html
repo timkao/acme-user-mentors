@@ -32,11 +32,29 @@
 
   {% for mentor in mentors %}
   {% if user.MentorId === mentor.id %}
-  <div>Mentor: {{mentor.name}}</div>
+  <div class="well">Mentor: {{mentor.name}}</div>
   {% endif %}
   {% endfor %}
+
+  {% if user.MentorId == null %}
+  <form action="/users/{{user.id}}?_method=PUT" method="POST">
+  <select name="select">
+    {% for selection in selections %}
+    {% if selection.id != user.id %}
+    <option value="{{selection.name}}" selected>{{selection.name}}</option>
+    {% endif %}
+    {% endfor %}
+  </select>
+  <button class="btn btn-info">Set As Mentor</button>
+  </form>
+  {% endif %}
+
 </div>
+
+
+
 {% endfor %}
+
 
 
 {% endblock %}
